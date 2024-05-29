@@ -12,18 +12,11 @@ This repository contains data and metadata required to reproduce the analysis of
 
 # Overview of contents
 
-The root of the repository contains files that set the website structure (menus, etc.) and style  (`.yml`, `.css`), as well as the citation/reference style. There are four `.Rmd` files to generate each website page, which are separated according to the convention of a research compendium.
-
-- `index.Rmd`: Describe the research, objectives, authorship, etc.
-- `data.Rmd`: Contains the raw or raw-derived data.
-- `code.Rmd`: Produces the main analysis report with a template that follows the Wickham and Grolemund's [model for a data science project](http://r4ds.had.co.nz/introduction.html):  import -> tidy -> transform-visualize-model -> communicate 
-- `manuscript.Rmd`: An example html manuscript template. It is intended to work as a pre-print version of the paper. 
-
 There are three basic folders:
 
-- `data/` - raw and further processed data.
-- `docs/` - html files of the research compendia with all text and figures.
-- `supp/` - supplementary files that are not data or R codes.
+- `data/` - raw and/or example data.
+- `docs/` - puplished manuscript and supplementary information.
+- `code/` - code to reproduce the analysis and visualizations of the associated manuscript.
 
 
 # Licenses
