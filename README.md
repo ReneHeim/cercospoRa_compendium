@@ -27,9 +27,9 @@ Download the [data](https://owncloud.gwdg.de/index.php/s/RuNNNjw3sxdNpgn) and ru
 
 Manuscript: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/)
 
-Code: [MIT](https://opensource.org/licenses/MIT) year: 2017, copyright holder: Emerson Del Ponte
+Code: [MIT](https://opensource.org/licenses/MIT)
 
-Data: [CC-0[(https://creativecommons.org/publicdomain/zero/1.0/)] attribution requested in reuse
+Data: [CC-0](https://creativecommons.org/publicdomain/zero/1.0/) attribution requested in reuse
 
 # Credits
 
