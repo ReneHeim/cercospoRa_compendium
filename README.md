@@ -4,10 +4,10 @@ This repository contains data and metadata required to reproduce the analysis of
 # Authors of this repository
 
 1. Rene HJ Heim (rene.heim@uni-goettingen.de)
-2. Paul
-3. Facundo
-4. Nathan
-5. Anne
+2. Paul Melloy
+3. Facundo Ramón Ispizua Yamati
+4. Nathan Okole
+5. Anne-Katrin Mahlein
 
 
 # Overview of contents
