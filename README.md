@@ -1,5 +1,5 @@
 # cercospoRa_compendium
-This repository contains data and metadata required to reproduce the analysis of the article XYZ. 
+This repository contains data and code required to reproduce the analysis of the article *Spatially explicit negative prognosis of Cercospora leaf spot epidemics by process-based integration of leaf area index from remote sensing*. 
 
 # Authors of this repository
 
@@ -17,6 +17,10 @@ There are three basic folders:
 - `data/` - raw and/or example data.
 - `docs/` - puplished manuscript and supplementary information.
 - `code/` - code to reproduce the analysis and visualizations of the associated manuscript.
+
+# How to use?
+
+Download the [data](https://owncloud.gwdg.de/index.php/s/RuNNNjw3sxdNpgn) and run the provided [code](https://github.com/ReneHeim/cercospoRa_compendium/tree/main/code) in the sequence the files are named. 
 
 
 # Licenses
@@ -45,7 +49,7 @@ This compendium was developed based on the ideas and examples in other resources
 
 # Contact
 
-Rene HJ Heim, Principle Investigator, University of Bonn and Institute for Sugar Beet Research, Germany
-Email: rheim@uni-bonn.de
+Rene HJ Heim, Institute of Geography | Cartography, GIS and Remote Sensing | University of Goettingen | Germany
+Email: rene.heim@uni-goettingen.de
 
 
