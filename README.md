@@ -3,7 +3,7 @@ This repository contains data and metadata required to reproduce the analysis of
 
 # Authors of this repository
 
-1. Rene HJ Heim (rheim@uni-bonn.de)
+1. Rene HJ Heim (rene.heim@uni-goettingen.de)
 2. Paul
 3. Facundo
 4. Nathan
