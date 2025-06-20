@@ -52,6 +52,11 @@ The following Python libraries were run on Python version 3.11.0
 #### Python libraries (via conda)
 
 ```p
+conda create -n my_analysis_env -c conda-forge python=3.11 \
+    numpy pandas matplotlib seaborn geopandas rasterio rioxarray shapely
+```
+
+```p
 seaborn         # Statistical data visualization
 matplotlib      # Plotting and visualization
 numpy           # Numerical computing
