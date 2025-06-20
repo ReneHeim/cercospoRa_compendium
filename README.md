@@ -46,6 +46,9 @@ install.packages("cercospoRa", # cercospoRa negative prognosis model
                  "ggplot2,     # plotting data 
                  "mgcv)        # statistical analysis with GAM
 ```
+### R requirements 
+The following Python libraries were run on Python version 3.11.0
+
 #### Python libraries (via conda)
 
 ```p
