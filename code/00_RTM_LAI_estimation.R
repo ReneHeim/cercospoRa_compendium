@@ -1,6 +1,7 @@
-library(readr)
+#library(readr)
 library(sf)
-library(raster)
+#library(raster)
+library(terra)
 library("hsdar") # For RTM modeling
 
 # setwd("E:\\Clean_Directory")
@@ -33,6 +34,17 @@ spect=PROSAIL(parameterList = param,
               Cab=Cab,
               Cw=Cw
 )
+
+# spect <- prosail::PRO4SAIL(lai = LAI[1],
+#                           psi=deltaazimuth,
+#                           tts=solar_zenith,
+#                           tto=sensor_zenith,
+#                           N=N,
+#                           CHL=Cab,
+#                           EWT=Cw)
+
+
+
 
 #spectral bands captured by S2 corresponding to the Micasense Altum
 data_resampling_matrix <- data.frame(center=c(492, 560, 664, 704, 833),
@@ -132,7 +144,7 @@ for(platform_ID in platforms){
   agg_factor = platform_ID$agg_factor
 
   # find list of images
-  folder_directory <- file.path("Data\\Orthomosaics", platform)
+  folder_directory <- file.path("data/", platform)
   image_list <- list.files(folder_directory, recursive = FALSE)
   image_list <- image_list[endsWith(image_list, '.tif')]
   image_date_list <- strsplit(image_list, ".tif")
@@ -145,7 +157,7 @@ for(platform_ID in platforms){
   }
 
 
-  message("Start ", names(platform_ID)," loop")
+  message("Start ", platform_ID$platform," loop")
   for(this_image in image_date_vector){
     lapply(this_image,
            retrieve_lai,
