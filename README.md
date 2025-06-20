@@ -46,7 +46,18 @@ install.packages("cercospoRa", # cercospoRa negative prognosis model
                  "ggplot2,     # plotting data 
                  "mgcv)        # statistical analysis with GAM
 ```
+#### Python libraries (via conda)
 
+```p
+seaborn         # Statistical data visualization
+matplotlib      # Plotting and visualization
+numpy           # Numerical computing
+geopandas       # Geospatial data analysis
+rasterio        # Raster data I/O and processing
+rioxarray       # Geospatial raster data with xarray
+shapely         # Geometry manipulation
+pandas          # Data manipulation and analysis
+```
 #### Non-CRAN packages
 At the time of analysis the `hsdar` R package was available on CRAN. 
 This package was recently archived. 
