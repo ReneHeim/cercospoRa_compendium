@@ -46,26 +46,7 @@ install.packages("cercospoRa", # cercospoRa negative prognosis model
                  "ggplot2,     # plotting data 
                  "mgcv)        # statistical analysis with GAM
 ```
-### R requirements 
-The following Python libraries were run on Python version 3.11.0
 
-#### Python libraries (via conda)
-
-```p
-conda create -n my_analysis_env -c conda-forge python=3.11 \
-    numpy pandas matplotlib seaborn geopandas rasterio rioxarray shapely
-```
-
-```p
-seaborn         # Statistical data visualization
-matplotlib      # Plotting and visualization
-numpy           # Numerical computing
-geopandas       # Geospatial data analysis
-rasterio        # Raster data I/O and processing
-rioxarray       # Geospatial raster data with xarray
-shapely         # Geometry manipulation
-pandas          # Data manipulation and analysis
-```
 #### Non-CRAN packages
 At the time of analysis the `hsdar` R package was available on CRAN. 
 This package was recently archived. 
@@ -88,7 +69,26 @@ remotes::install_github(repo = "https://github.com/cran/rgdal")
 remotes::install_github(repo = "https://github.com/cran/hsdar")
 
 ```
+### Python requirements 
+The following Python libraries were run on Python version 3.11.0
 
+#### Python libraries (via conda)
+
+```p
+conda create -n my_analysis_env -c conda-forge python=3.11 \
+    numpy pandas matplotlib seaborn geopandas rasterio rioxarray shapely
+```
+
+```p
+seaborn         # Statistical data visualization
+matplotlib      # Plotting and visualization
+numpy           # Numerical computing
+geopandas       # Geospatial data analysis
+rasterio        # Raster data I/O and processing
+rioxarray       # Geospatial raster data with xarray
+shapely         # Geometry manipulation
+pandas          # Data manipulation and analysis
+```
 ## Licenses
 
 Manuscript: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/)
