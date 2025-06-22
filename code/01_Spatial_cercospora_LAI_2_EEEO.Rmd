@@ -106,6 +106,7 @@ generate_EO_maps = function(platform,
 
 
 ## Estimate Earliest Cercopora onset
+> **Files Must contain acquisition date in the form of YYYYMMDD, eg 20220615**
 
 ```{r}
 # loop through platforms with the function
