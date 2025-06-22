@@ -44,7 +44,8 @@ install.packages("cercospoRa", # cercospoRa negative prognosis model
                  "officer",    # exporting tables and figures to Microsoft Word
                  "data.table", # data rectangling / wrangling
                  "ggplot2,     # plotting data 
-                 "mgcv)        # statistical analysis with GAM
+                 "mgcv",       # statistical analysis with GAM
+                 "here")       # provides project folder path for reproducability
 ```
 
 #### Non-CRAN packages
