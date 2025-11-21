@@ -2,6 +2,12 @@
 This repository contains data and code required to reproduce the analysis of the 
 article *Spatially explicit negative prognosis of Cercospora leaf spot epidemics by process-based integration of leaf area index from remote sensing*. 
 
+## How to use?
+
+Download the [data](https://owncloud.gwdg.de/index.php/s/RuNNNjw3sxdNpgn) and 
+run the provided [code](https://github.com/ReneHeim/cercospoRa_compendium/tree/main/code) 
+in the sequence the files are named. 
+
 ## Authors of this repository
 
 1. Rene HJ Heim (rene.heim@uni-goettingen.de)
@@ -19,12 +25,6 @@ There are three basic folders:
 - `docs/` - published manuscript and supplementary information.
 - `code/` - code to reproduce the analysis and visualizations of the associated 
 manuscript.
-
-## How to use?
-
-Download the [data](https://owncloud.gwdg.de/index.php/s/RuNNNjw3sxdNpgn) and 
-run the provided [code](https://github.com/ReneHeim/cercospoRa_compendium/tree/main/code) 
-in the sequence the files are named. 
 
 ## Requirements  
 The analysis pipeline was undertaken in R and Python.
