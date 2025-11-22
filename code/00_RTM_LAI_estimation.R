@@ -5,13 +5,22 @@ library(terra)
 library("hsdar") # For RTM modeling
 
 # setwd("E:\\Clean_Directory")
-
+tail <- function(x){
+  y <- x[length(x)]
+  return(y)
+}
 #generate look up table (LUT)
 #define parameters for sugar beet according to
 #Jay, Sylvain, Fabienne Maupas, Ryad Bendoula, and Nathalie Gorretta.
 #"Retrieving LAI, chlorophyll and nitrogen contents in sugar beet crops
 #from multi-angular optical remote sensing: Comparison of vegetation indices
 #and PROSAIL inversion for field phenotyping." Field Crops Research 210 (2017): 33-46.
+tail <- function(x){
+  y <- x[length(x)]
+  return(y)
+}
+
+
 solar_zenith = 10
 deltaazimuth = 180
 sensor_zenith = 0
@@ -129,7 +138,7 @@ platforms = list(list(platform="S2", harmonized = FALSE, normalized = FALSE, ban
                                                           fwhm=c(66, 36, 31, 15, 106))),
 
                  list(platform="UAV", harmonized = TRUE, normalized = TRUE, band_index = 1:5, aggregate = TRUE, agg_factor=50, #GSD = 0.5 m
-                      data_resampling_matrix <- data.frame(center=c(475, 560, 668, 717, 842),
+                      data_resampling_matrix = data.frame(center=c(475, 560, 668, 717, 842),
                                                            fwhm=c(32, 27, 14, 12, 57)))
                  )
 
@@ -152,7 +161,7 @@ for(platform_ID in platforms){
   # read all dates available for images
   image_date_vector <- c()
   for (i in 1:length(image_date_list)){
-      j <- tail(image_date_list[[i]],1)
+      j <- tail(image_date_list[[i]])
       image_date_vector <- c(image_date_vector, j)
   }
 
