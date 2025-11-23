@@ -137,7 +137,7 @@ platforms = list(list(platform="S2", harmonized = FALSE, normalized = FALSE, ban
                       data_resampling_matrix = data.frame(center=c(492, 560, 664, 704, 833),
                                                           fwhm=c(66, 36, 31, 15, 106))),
 
-                 list(platform="UAV", harmonized = TRUE, normalized = TRUE, band_index = 1:5, aggregate = TRUE, agg_factor=50, #GSD = 0.5 m
+                 list(platform="UAV", harmonized = TRUE, normalized = TRUE, band_index = 1:5, aggregate = TRUE, agg_factor=105, #GSD = 1 m
                       data_resampling_matrix = data.frame(center=c(475, 560, 668, 717, 842),
                                                            fwhm=c(32, 27, 14, 12, 57)))
                  )
