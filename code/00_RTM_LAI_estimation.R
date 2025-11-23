@@ -87,7 +87,7 @@ retrieve_lai <- function(image_date,
   allbands <- terra::crop(allbands, st_transform(roi, crs(allbands)), mask=TRUE)
   if(!harmonized) allbands <- allbands - 1000 #additive offset
   if(!normalized) allbands <- (allbands)/10000 # harmonized S2
-  if(!aggregate) allbands <- terra::aggregate(allbands, fact=agg_factor, fun='mean') # aggregate in case it is UAV
+  if(aggregate) allbands <- terra::aggregate(allbands, fact=agg_factor, fun='mean') # aggregate in case it is UAV
 
 
   # Extract spectrum and LAI
