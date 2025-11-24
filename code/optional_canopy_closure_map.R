@@ -76,3 +76,11 @@ platforms <- c("S2", "S2_superresolution", "UAV")
 for (platform in platforms) {
   generate_CC(base_dir, platform)
 }
+
+library(usethis)
+suppressWarnings(
+  sessioninfo::session_info(
+    to_file = here("output", "CC_maps", 
+                   "CC_maps.log")
+  )
+)

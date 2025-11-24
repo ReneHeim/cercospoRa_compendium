@@ -109,3 +109,11 @@ platforms <- c("S2", "S2_superresolution", "UAV")
 for (platform in platforms) {
   plot_r(base_dir, platform)
 }
+
+library(usethis)
+suppressWarnings(
+  sessioninfo::session_info(
+    to_file = here("output", "LAI_progression_curve", 
+                   "LAI_progression_curve.log")
+  )
+)
