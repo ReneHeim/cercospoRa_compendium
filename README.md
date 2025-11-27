@@ -2,29 +2,17 @@
 This repository contains data and code required to reproduce the analysis of the 
 article *Spatially explicit negative prognosis of Cercospora leaf spot epidemics by process-based integration of leaf area index from remote sensing*. 
 
-## How to use?
-
-Download the [data](https://owncloud.gwdg.de/index.php/s/RuNNNjw3sxdNpgn) and 
-run the provided [code](https://github.com/ReneHeim/cercospoRa_compendium/tree/main/code) 
-in the sequence the files are named. 
-
-## Authors of this repository
-
-1. Rene HJ Heim (rene.heim@uni-goettingen.de)
-2. Paul Melloy (paul.melloy@csiro)
-3. Facundo Ramón Ispizua Yamati
-4. Nathan Okole
-5. Anne-Katrin Mahlein
-
-
 ## Overview of contents
 
 There are three basic folders:
 
 - `data/` - raw and/or example data. - *Download large files to this location*
 - `docs/` - published manuscript and supplementary information.
-- `code/` - code to reproduce the analysis and visualizations of the associated 
-manuscript.
+- `code/` - code to reproduce the analysis and visualizations of the associated manuscript.
+
+## How to use?
+
+Download the raw [data](https://github.com/ReneHeim/cercospoRa_compendium/tree/main/data) and run the provided [code](https://github.com/ReneHeim/cercospoRa_compendium/tree/main/code) in the sequence the files are named. 
 
 ## Requirements  
 The analysis pipeline was undertaken in R and Python.
@@ -47,27 +35,6 @@ install.packages("cercospoRa", # cercospoRa negative prognosis model
                  "mgcv",       # statistical analysis with GAM
                  "here")       # provides project folder path for reproducability
 ```
-
-#### Non-CRAN packages
-At the time of analysis the `hsdar` R package was available on CRAN. 
-This package was recently archived. 
-For reproducibility of the results we show how to install the package here, 
-however this might become unstable in the future. 
-Other packages are available which could provide the functionality of `hsdar`
-however the results may differ slightly, due to the various ways to undertake
-RTM modelling, which is a fast evolving field.  
-
-This package requires a special setup which might be different for specific 
-systems.  
-
-```r
-# Remotes package needed for installing packages via github
-if("remotes" %in% names(installed.packages()[, "Package"]) == FALSE) {
-  install.packages("remotes")
-  }
-
-remotes::install_github(repo = "https://github.com/cran/rgdal")
-remotes::install_github(repo = "https://github.com/cran/hsdar")
 
 ```
 ### Python requirements 
