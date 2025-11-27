@@ -36,7 +36,6 @@ install.packages("cercospoRa", # cercospoRa negative prognosis model
                  "here")       # provides project folder path for reproducability
 ```
 
-```
 ### Python requirements 
 The following Python libraries were run on Python version 3.11.0
 
