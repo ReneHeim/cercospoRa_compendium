@@ -2,9 +2,12 @@
 library(sf)
 #library(raster)
 library(terra)
-library("hsdar") # For RTM modeling
+library(prosail)
+library(dplyr)
+#library("hsdar") # For RTM modeling
 
 # setwd("E:\\Clean_Directory")
+
 tail <- function(x){
   y <- x[length(x)]
   return(y)
@@ -34,25 +37,42 @@ Cab = rep(rep(Cab0, each = length(LAI0)), times=length(Cw0)*length(N0))
 Cw = rep(rep(Cw0, each = length(Cab0)*length(LAI0)), times = length(N0))
 N = rep(N0, each = length(Cab0)*length(LAI0)*length(Cw0))
 
-param = data.frame(LAI = LAI)
-spect=PROSAIL(parameterList = param,
-              psi=deltaazimuth,
-              tts=solar_zenith,
-              tto=sensor_zenith,
-              N=N,
-              Cab=Cab,
-              Cw=Cw
+InputPROSAIL <- data.frame(
+  N     = N,
+  CHL   = Cab,
+  EWT   = Cw,
+  lai   = LAI,
+  TypeLidf = 1, # type of leaf distribution https://jbferet.gitlab.io/prosail/reference/PRO4SAIL.html
+  LIDFa = -0.35, # Spherical (default)	-0.35	-0.15 https://www.quantargo.com/help/r/latest/packages/hsdar/checkhull.html/PROSAIL2R
+  LIDFb = -0.15, 
+  q = 0.01, # Hot Spot parameter
+  psoil = 0.4, #wet soil
+  tto = sensor_zenith,
+  tts = solar_zenith,
+  psi = deltaazimuth
 )
 
-# spect <- prosail::PRO4SAIL(lai = LAI[1],
-#                           psi=deltaazimuth,
-#                           tts=solar_zenith,
-#                           tto=sensor_zenith,
-#                           N=N,
-#                           CHL=Cab,
-#                           EWT=Cw)
+InputPROSAIL <- data.frame(
+  N     = N,
+  CHL   = Cab,
+  EWT   = Cw,
+  lai   = LAI,
+  TypeLidf = 1, # type of leaf distribution https://jbferet.gitlab.io/prosail/reference/PRO4SAIL.html
+  LIDFa = -0.35, # Spherical (default)	-0.35	-0.15 https://www.quantargo.com/help/r/latest/packages/hsdar/checkhull.html/PROSAIL2R
+  LIDFb = -0.15, 
+  q = 0.01, # Hot Spot parameter
+  psoil = 0.3, #30% dry soil
+  tto = sensor_zenith,
+  tts = solar_zenith,
+  psi = deltaazimuth
+)
 
-
+spect <- Generate_LUT_PROSAIL(SAILversion = '4SAIL',
+                            InputPROSAIL = InputPROSAIL,
+                            SpecPROSPECT = prospect::SpecPROSPECT_FullRange,
+                            SpecSOIL = SpecSOIL,
+                            SpecATM = SpecATM)
+spect <- spect$BRF
 
 
 #spectral bands captured by S2 corresponding to the Micasense Altum
@@ -72,35 +92,47 @@ retrieve_lai <- function(image_date,
                          harmonized = FALSE,
                          normalized = FALSE,
                          aggregate = FALSE,
-                         agg_factor = 50){
-
+                         agg_factor = 50,
+                         lai = InputPROSAIL$lai){
+  
   # Resample spectrum according to sensor
-  spect_resample <- spectralResampling(spect, data_resampling_matrix)
-
+  sensor <- get_spec_sensor(
+    SensorName = "sensor",
+    SpectralProps = data_resampling_matrix,
+    Path_SensorResponse = "./")
+  SRF_sensor <- GetRadiometry("sensor")
+  
+  spect_resample <- applySensorCharacteristics(wvl = prospect::SpecPROSPECT_FullRange$lambda,
+                                               SRF = SRF_sensor,
+                                               InRefl = spect)
+  
+  rownames(spect_resample) <- SRF_sensor$Spectral_Bands
+  spect_resample <- as.data.frame(t(spect_resample))
+  
   # read raster
   image_path <- file.path(folder_directory, paste(image_date,'.tif', sep = ''))
   allbands <- terra::rast(image_path)
   allbands <- allbands[[band_index]] #allbands[[c(2:5, 8)]]
-
+  
   # Preprocess the rasters
   cat(paste0("convert to SpatRaster: ", image_date, "\n"))
   allbands <- terra::crop(allbands, st_transform(roi, crs(allbands)), mask=TRUE)
   if(!harmonized) allbands <- allbands - 1000 #additive offset
   if(!normalized) allbands <- (allbands)/10000 # harmonized S2
   if(aggregate) allbands <- terra::aggregate(allbands, fact=agg_factor, fun='mean') # aggregate in case it is UAV
-
-
+  
+  
   # Extract spectrum and LAI
-  spect_resample_ <- hsdar::spectra(spect_resample)
-  lai <- hsdar::SI(spect_resample)$LAI
-
+  spect_resample_ <- spect_resample
+  lai <- lai
+  
   # Apply the function
-  lai_inversion = terra::app(allbands, maximize_cos_wrapper(T_var=spect_resample_, lai=lai), cores = 8)
-
+  lai_inversion = terra::app(allbands, maximize_cos_wrapper(T_var=spect_resample_, lai=lai), cores = 12)
+  
   # Create saving path
-  lai_folder_directory <- file.path("Data", paste0("LAI_maps"))
+  lai_folder_directory <- file.path("Data", paste0("LAI_maps4"))
   if(!dir.exists(lai_folder_directory)) dir.create(lai_folder_directory)
-
+  
   output_foldername <- file.path(lai_folder_directory, platform)
   if(!dir.exists(output_foldername)) dir.create(output_foldername)
   output_filename <- file.path(output_foldername, paste(image_date,'.tif', sep = ''))
@@ -130,17 +162,22 @@ roi <- st_read("Data\\ROI\\Field_perimeter.gpkg")
 
 # Loop through platform
 platforms = list(list(platform="S2", harmonized = FALSE, normalized = FALSE, band_index = c(2:5, 8), aggregate = FALSE, agg_factor=NA,
-                      data_resampling_matrix = data.frame(center=c(492, 560, 664, 704, 833),
+                      data_resampling_matrix = data.frame(wl=c(492, 560, 664, 704, 833),
                                                           fwhm=c(66, 36, 31, 15, 106))),
-
+                 
                  list(platform="S2_superresolution", harmonized = TRUE, normalized = FALSE, band_index = c(1:4, 7), aggregate = FALSE, agg_factor=NA,
-                      data_resampling_matrix = data.frame(center=c(492, 560, 664, 704, 833),
+                      data_resampling_matrix = data.frame(wl=c(492, 560, 664, 704, 833),
                                                           fwhm=c(66, 36, 31, 15, 106))),
-
+                 
                  list(platform="UAV", harmonized = TRUE, normalized = TRUE, band_index = 1:5, aggregate = TRUE, agg_factor=105, #GSD = 1 m
-                      data_resampling_matrix = data.frame(center=c(475, 560, 668, 717, 842),
-                                                           fwhm=c(32, 27, 14, 12, 57)))
-                 )
+                      data_resampling_matrix = data.frame(wl=c(475, 560, 668, 717, 842),
+                                                          fwhm=c(32, 27, 14, 12, 57)))
+)
+
+platforms = list(list(platform="UAV", harmonized = TRUE, normalized = TRUE, band_index = 1:5, aggregate = TRUE, agg_factor=105, #GSD = 1 m
+                      data_resampling_matrix = data.frame(wl=c(475, 560, 668, 717, 842),
+                                                          fwhm=c(32, 27, 14, 12, 57)))
+)
 
 for(platform_ID in platforms){
   #unlist
@@ -151,21 +188,21 @@ for(platform_ID in platforms){
   normalized = platform_ID$normalized
   aggregate = platform_ID$aggregate
   agg_factor = platform_ID$agg_factor
-
+  
   # find list of images
-  folder_directory <- file.path("data/", platform)
+  folder_directory <- file.path("Data/Orthomosaics", platform)
   image_list <- list.files(folder_directory, recursive = FALSE)
   image_list <- image_list[endsWith(image_list, '.tif')]
   image_date_list <- strsplit(image_list, ".tif")
-
+  
   # read all dates available for images
   image_date_vector <- c()
   for (i in 1:length(image_date_list)){
-      j <- tail(image_date_list[[i]])
-      image_date_vector <- c(image_date_vector, j)
+    j <- tail(image_date_list[[i]])
+    image_date_vector <- c(image_date_vector, j)
   }
-
-
+  
+  
   message("Start ", platform_ID$platform," loop")
   for(this_image in image_date_vector){
     lapply(this_image,
