@@ -14,6 +14,7 @@ library(officer)
 library(data.table)
 library(ggplot2)
 library(mgcv) # gam models
+library(here)
 source("../R/interpret_gam.R")
 ```
 
@@ -33,8 +34,8 @@ calc_das(days = 156)
 
 ### Read in data
 ```{r read_data}
-cclo <- fread("../data/2025-05-13_fulldf_cc_cercospoRa(in).csv")[, "data" := "canopy_closure"]
-eeeo <- fread("../data/2025-05-13_fulldf_eo_cercospoRa(in).csv")[, "data" := "epidemic_onset"]
+cclo <- fread("../data/2025-12-02_fulldf_cc_cercospoRa.csv")[, "data" := "canopy_closure"]
+eeeo <- fread("../data/2025-12-02_fulldf_eo_cercospoRa.csv")[, "data" := "epidemic_onset"]
 ```
 
 We will combine the data so we can associate observation locations with canopy 
@@ -124,6 +125,28 @@ mod <- lm(das ~ source + inoculum + fungicide, data = cclo)
 summary(mod)
 ```
 
+We need to check the residuals for spatial autocorrelation.  
+
+```{r}
+library(spdep)
+
+# Create a spatial weights matrix (e.g., based on k-nearest neighbors)
+coords <- cbind(cclo$x, cclo$y)
+knn_weights <- knearneigh(coords, k = 2) # k=2 for small dataset
+nb_weights <- knn2nb(knn_weights)
+listw <- nb2listw(nb_weights, style = "W", zero.policy = TRUE)
+
+# Perform Moran's I test on OLS residuals
+moran.test(residuals(mod), listw)
+```
+
+The moran test indicates a strong spatial auto-correlation. 
+This indicates we should proceed with a model that can handle spatial autocorrelation.  
+
+Generalised additive models are a reasonable fit here as our dependant variable
+is an integer and it can handle non-linearity in the co-variates.
+
+
 ### Plot data
 ```{r plot_data}
 # plot EO data from each source an treatment
@@ -163,6 +186,13 @@ plot(mod1)
 
 There seems an overfitting due to the experimental setup.
 The spatial spline is accounting for too much of the inoculated areas.  
+Lets also check if autocorrelation remains
+
+```{r}
+moran.test(residuals(mod1), listw)
+```
+
+Auto correlation is much less significant, but still significant.  
 
 We will try again refitting with less knots.  
 
@@ -181,13 +211,18 @@ plot(mod1a)
 
 With fewer knots we have obtained a spatial correction for the field gradient.
 
-Fungicide treated areas on average were not significantly different to untreated
-for epidemic onset days.  
+Differences in canopy closure dates between fungicide treated areas were 
+`r interpret_gam(mod1a, words = 1, coeff = "fungicidetreated", sig = TRUE)` 
+compared to untreated for date of canopy closure.  
 
-Non-Inoculated areas on average show earlier canopy closure, compared to 
-inoculated areas.  
+Non-Inoculated areas showed 
+`r interpret_gam(mod1a, words = 5, coeff = "inoculuminoculated")` canopy closure, 
+of `r interpret_gam(mod1a, words = 0, coeff = "inoculuminoculated")` days 
+compared to inoculated areas.  
 
-Remote sensing platform UAS detects average canopy closure 12 days earlier.  
+Remote sensing platform UAS detected canopy closure 
+`r interpret_gam(mod1a, words = 0, coeff = "sourceuas")` days 
+`r interpret_gam(mod1a, words = 5, coeff = "sourceuas")`.  
 
 <br>  
 
@@ -241,11 +276,7 @@ anova(mod4)
 
 ### Fungicide treatment  
 
-Overall there was no significant effects of fungicide treated part of the field.
-The only significant result showed remote sensing methods S2 and UAS resulted in
-earlier EEEO dates in fungicide treated compared to untreated.  
-The fungicide treated area seemed to show thicker canopy and I think this result
-can be put down to spatial field effects.  
+Overall the interaction between fungicide and RS source was non significant.
 
 <br>  
 
@@ -267,8 +298,6 @@ There is no canopy closure timing interaction between remote sensing platform
 and inoculated areas.  
 
 ##### results table  
-
-
 
 ```{r}
 cclosure_estimates <- 
@@ -309,7 +338,7 @@ and averages around `r interpret_gam(mod6, words = 0)` days
 `r interpret_gam(mod6, words = 4)` sowing.  
   
 ##### **Remote sensing variables**  
-UAS estimated epidemic onset an average of 
+UAS estimated canopy closure. an average of 
 `r interpret_gam(mod6, words = 0, coeff = "sourceuas")` days 
 `r interpret_gam(mod6, words = 5, coeff = "sourceuas")` than Sentinel 2.  
 
@@ -396,8 +425,8 @@ eeeo[source != "observation",] |>
        x = "Observation",
        y = "UAS Estimated earliest EO") +
   theme(legend.position = "top")+
-  xlim(c(90,180))+
-  ylim(c(90,180))+
+  xlim(c(70,170))+
+  ylim(c(70,170))+
   geom_abline(slope = 1, intercept = 0, color = "black", linetype = "dashed")+
   scale_color_viridis_d(begin = 0.4)
 ```
@@ -485,7 +514,7 @@ In the fungicide treated areas S2 showed
 `r interpret_gam(mod4_eo, 5 ,"sources2:fungicidetreated")` estimated epidemic onset, 
 super S2 showed 
 `r interpret_gam(mod4_eo, 5 ,"sources2s:fungicidetreated")` estimated epidemic onset, 
-and USAS showed
+and UAS showed
 `r interpret_gam(mod4_eo, 5 ,"sourceuas:fungicidetreated")` estimated epidemic onset, 
 This was likely due to non-treated areas returning later canopy closure.  
 
@@ -493,7 +522,7 @@ Inoculated areas in fungicide treated plots showed for S2
 `r interpret_gam(mod4_eo, 5 ,"sources2:inoculuminoculated:fungicidetreated")` estimated epidemic onset, 
 super S2 showed 
 `r interpret_gam(mod4_eo, 5 ,"sources2s:inoculuminoculated:fungicidetreated")` estimated epidemic onset, 
-and USAS showed
+and UAS showed
 `r interpret_gam(mod4_eo, 5 ,"sourceuas:inoculuminoculated:fungicidetreated")` estimated epidemic onset, 
 compared to non-inoculated areas.
 
