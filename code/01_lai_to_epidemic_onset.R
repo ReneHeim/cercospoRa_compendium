@@ -72,9 +72,7 @@ generate_EO_maps <- function(platform,
       as.Date(
         list.files(img_dir, pattern = "tif$", full.names = FALSE),
         format = "%Y_%m_%d"
-      ),
-      tz = "UTC"
-    ),
+      ), tz = "UTC"),
     target_res = target_res
   )
 
