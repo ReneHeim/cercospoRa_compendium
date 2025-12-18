@@ -5,3 +5,5 @@
 data/s2
 data/s2s
 data/uas
+*.Rproj
+data/ROI/Field_perimeter.gpkg
