@@ -27,9 +27,13 @@ The compendium follows a simplified research-compendium layout inspired by publi
 - `docs/`  
   - Manuscript, supplementary information, and any rendered HTML or PDF outputs.  
 
-- `code/`  
+- `analysis/`  
   - R and Python scripts and R Markdown files to reproduce the analyses and visualisations.  
   - Files are numbered to indicate the recommended execution order (e.g. `01_*.R`, `02_*.R`, …).
+
+- `R/`  
+  - Custom R function scripts that aid the analysis.
+
 
 ---
 
@@ -37,37 +41,42 @@ The compendium follows a simplified research-compendium layout inspired by publi
 
 1. **Clone the repository**
 
-```
+```bash
 git clone https://github.com/ReneHeim/cercospoRa_compendium.git
 cd cercospoRa_compendium
 ```
 
 2. **Obtain data**
 
-Download the required raw data into `data/` (see the `data/` subfolder or the manuscript Data availability statement for links and access details).  
+Download the required raw data into `data/` (see the `data/` subfolder or the 
+manuscript Data availability statement for links and access details).  
 
-3. **Project root and paths**
+3. **Project root and paths**  
 
-All scripts assume the project root is the working directory and use the `here` package (in R) to resolve paths for portability and reproducibility.  
+All scripts assume the project root is the working directory and use the `here` 
+package (in R) to resolve paths for portability and reproducibility.  
 
-4. **Run the workflow**
+4. **Run the workflow**  
 
-Execute the scripts / Rmd files in `code/` in numerical order (e.g. `01_*.R` → `02_*.R` → …).  
-Each script is documented with its inputs, outputs, and expected runtime.
+Execute the scripts / Rmd files in `code/` in numerical order 
+(e.g. `01_*.R` → `02_*.R` → …).  
+Each script is documented with its inputs, outputs, and expected runtime.  
 
 ---
 
-## Software requirements
+## Software requirements  
 
-The analysis pipeline uses both R and Python.
+The analysis pipeline uses both R and Python.  
 
-### R environment
+### R environment  
 
-The analyses were run with **R 4.5.0**.  
+R version **R 4.5.0** was used to undertake the analyses, authors can't certify 
+that other versions will run the code successfully.  
 
-Install the required packages (including the `cercospoRa` package implementing the CLS negative prognosis model) with:
+Install the required packages (including the `cercospoRa` package implementing 
+the CLS negative prognosis model) with:  
 
-```
+```r
 install.packages(
 c("cercospoRa", # CLS negative prognosis model
 "readr",
@@ -85,13 +94,13 @@ c("cercospoRa", # CLS negative prognosis model
 
 ```
 
-> For exact package versions, see the session information recorded in the analysis scripts / Rmd files.
+> For exact package versions, see the session information recorded in the analysis scripts / Rmd files.  
 
-### Python environment
+### Python environment  
 
 Python code was run with **Python 3.11.0** in a Conda environment.  
 
-Create and activate the environment with:
+Create and activate the environment with:  
 
 ```
 conda create -n cercospora_env -c conda-forge python=3.11
@@ -99,7 +108,7 @@ numpy pandas matplotlib seaborn geopandas rasterio rioxarray shapely
 conda activate cercospora_env
 ```
 
-Key Python libraries:
+Key Python libraries:  
 
 - `numpy` – Numerical computing  
 - `pandas` – Tabular data handling  
@@ -107,9 +116,9 @@ Key Python libraries:
 - `geopandas`, `shapely` – Vector geospatial analysis  
 - `rasterio`, `rioxarray` – Raster I/O and geospatial raster handling  
 
----
+---  
 
-## Licenses
+## Licenses  
 
 - **Manuscript text and figures:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)  
 - **Code in this repository:** [MIT License](https://opensource.org/licenses/MIT)  
@@ -119,21 +128,24 @@ Please also cite the associated article when using this compendium in your own w
 
 ---
 
-## How to cite
+## How to cite  
 
-If you use this compendium or the `cercospoRa` package, please cite:
+If you use this compendium or the `cercospoRa` package, please cite:  
 
 > Heim RHJ, *et al.* *Spatially explicit negative prognosis of Cercospora leaf spot epidemics by process-based integration of leaf area index from remote sensing.* *[Journal]*, [year], [volume]:[pages]. DOI: [DOI].
 
-You may also wish to cite general guidance on research compendia, for example:
+You may also wish to cite general guidance on research compendia, for example:  
 
-> Marwick B, Boettiger C, Mullen L (2018). “Packaging data analytical work reproducibly using R (and friends).” *The American Statistician* 72(1):80–88.  
+> Marwick B, Boettiger C, Mullen L (2018). 
+“Packaging data analytical work reproducibly using R (and friends).” 
+*The American Statistician* 72(1):80–88.  
 
 ---
 
-## Acknowledgements
+## Acknowledgements  
 
-This compendium was inspired by existing research-compendium templates and workflows, including:
+This compendium was inspired by existing research-compendium templates and 
+workflows, including:  
 
 - Research compendium guidelines and examples by Ben Marwick and collaborators  
 - The `manuscriptPackage` template by J. Hollister  
@@ -149,4 +161,4 @@ Rene H. J. Heim
 Institute of Geography – Cartography, GIS and Remote Sensing  
 University of Göttingen, Germany  
 
-Email: [rene.heim@uni-goettingen.de](mailto:rene.heim@uni-goettingen.de)
+Email: [rene.heim@uni-goettingen.de](mailto:rene.heim@uni-goettingen.de)  
