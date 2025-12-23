@@ -1,3 +1,26 @@
+###############################################################################
+# Project:     cercospoRa
+# Script:      00_create_lai_maps.R
+# Author:      Nathan Okole
+# Affiliation: Institute for Sugar Beet Research
+# Date:        2025-11-22
+#
+# Description:
+#   This script generates LAI maps using the PROSAIL radiative transfer model. 
+#
+# Reproducibility:
+#   Session information and dependencies are captured at the end of the script
+#   using library(usethis) and sessioninfo::session_info()
+#
+# Usage:
+#   Run the entire script or step-by-step using RStudio sections.
+#
+# Notes:
+#   - Data available: https://github.com/ReneHeim/cercospoRa_compendium/tree/main/data 
+#
+###############################################################################
+
+
 # # ---- Dependency management --------------------------------------------------
 # cran_packages <- c("terra", "here", "sessioninfo", "usethis", "dplyr", "sf")
 # github_packages <- c("prosail")  # from jbferet/prosail
