@@ -16,21 +16,19 @@
 # Usage:
 #   Run the entire script or step-by-step using RStudio sections.
 #
-# Notes:
-#   - Data files are not included in the repository due to size constraints.
 #
 ###############################################################################
 
-# ---- Dependency management --------------------------------------------------
-required_packages <- c("cercospoRa", "terra", "here", "sessioninfo", "usethis")
-
-# Install any missing packages
-installed <- required_packages %in% rownames(installed.packages())
-if (any(!installed)) {
-  install.packages(required_packages[!installed])
-}
-
-lapply(required_packages, library, character.only = TRUE)
+# # ---- Dependency management --------------------------------------------------
+# required_packages <- c("cercospoRa", "terra", "here", "sessioninfo", "usethis")
+# 
+# # Install any missing packages
+# installed <- required_packages %in% rownames(installed.packages())
+# if (any(!installed)) {
+#   install.packages(required_packages[!installed])
+# }
+# 
+# lapply(required_packages, library, character.only = TRUE)
 
 # Required packages
 library(cercospoRa)
@@ -54,16 +52,16 @@ generate_EO_maps <- function(platform,
   print(platform)   # temporary debug
   target_res <- switch(
     platform,
-    "S2"                = 10,
-    "S2_superresolution" = 10,
-    "UAV"               = 10,
+    "s2"                = 10,
+    "s2_superresolution" = 10,
+    "uas"               = 10,
     10
   )
 
   print(target_res) # temporary debug
 
   # Directory containing LAI maps for this platform
-  img_dir <- here("output", "LAI_maps", platform)
+  img_dir <- here("output", "lai_maps", platform)
 
   # Read all available LAI maps and fit pixel-wise growth parameters
   epidemic_onset_param <- read_sb_growth_parameter(
@@ -71,7 +69,7 @@ generate_EO_maps <- function(platform,
     img_dates = as.POSIXct(
       as.Date(
         list.files(img_dir, pattern = "tif$", full.names = FALSE),
-        format = "%Y_%m_%d"
+        format = "%Y%m%d"
       ), tz = "UTC"),
     target_res = target_res
   )
@@ -105,12 +103,12 @@ generate_EO_maps <- function(platform,
     sowing_num <- as.numeric(as.POSIXct(sowing_date, tz = "UTC"))
     epidemic_onset_map <- (epidemic_onset_map - sowing_num) / (3600 * 24)
 
-    out_dir <- here("output", "Predicted_epidemic_onset", platform)
+    out_dir <- here("output", "predicted_epidemic_onset", platform)
     if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
     file_path <- file.path(
       out_dir,
-      paste0("Ep_onset_", cultivar_sus, ".tif")
+      paste0("ep_onset_", cultivar_sus, ".tif")
     )
 
     writeRaster(
@@ -131,7 +129,7 @@ generate_EO_maps <- function(platform,
   }
 }
 
-platforms <- c("S2", "S2_superresolution", "UAV")
+platforms <- c("s2", "s2_superresolution", "uas")
 
 for (platform in platforms) {
   generate_EO_maps(platform)
@@ -140,7 +138,7 @@ for (platform in platforms) {
 library(usethis)
 suppressWarnings(
   sessioninfo::session_info(
-    to_file = here("output", "Predicted_epidemic_onset", 
+    to_file = here("output", "predicted_epidemic_onset", 
                    "01_lai_to_epidemic_onset_session.log")
     )
 )
