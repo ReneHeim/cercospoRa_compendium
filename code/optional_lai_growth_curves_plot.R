@@ -21,16 +21,16 @@
 #
 ###############################################################################
 
-# ---- Dependency management --------------------------------------------------
-required_packages <- c("cercospoRa", "terra", "here", "sessioninfo", "usethis")
-
-# Install any missing packages
-installed <- required_packages %in% rownames(installed.packages())
-if (any(!installed)) {
-  install.packages(required_packages[!installed])
-}
-
-lapply(required_packages, library, character.only = TRUE)
+# # ---- Dependency management --------------------------------------------------
+# required_packages <- c("cercospoRa", "terra", "here", "sessioninfo", "usethis")
+# 
+# # Install any missing packages
+# installed <- required_packages %in% rownames(installed.packages())
+# if (any(!installed)) {
+#   install.packages(required_packages[!installed])
+# }
+# 
+# lapply(required_packages, library, character.only = TRUE)
 
 
 # Required packages
@@ -38,8 +38,8 @@ library(cercospoRa)
 library(terra)
 library(here)
 
-base_dir    <- here("output", "LAI_maps")
-destination <- here("output", "LAI_progression_curve")
+base_dir    <- here("output", "lai_maps")
+destination <- here("output", "lai_progression_curve")
 
 # Create destination folder if not present
 if (!dir.exists(destination)) {
@@ -55,7 +55,7 @@ plot_r <- function(base_dir, platform) {
   epidemic_onset_param <-
     read_sb_growth_parameter(
       files_full,
-      img_dates = as.POSIXct(as.Date(files_dates, format = "%Y_%m_%d"), tz = "UTC"),
+      img_dates = as.POSIXct(as.Date(files_dates, format = "%Y%m%d"), tz = "UTC"),
       10
     )
   
@@ -104,7 +104,7 @@ plot_r <- function(base_dir, platform) {
   dev.off()
 }
 
-platforms <- c("S2", "S2_superresolution", "UAV")
+platforms <- c("s2", "s2_superresolution", "uas")
 
 for (platform in platforms) {
   plot_r(base_dir, platform)
@@ -113,7 +113,7 @@ for (platform in platforms) {
 library(usethis)
 suppressWarnings(
   sessioninfo::session_info(
-    to_file = here("output", "LAI_progression_curve", 
-                   "LAI_progression_curve.log")
+    to_file = here("output", "lai_progression_curve", 
+                   "lai_progression_curve.log")
   )
 )
