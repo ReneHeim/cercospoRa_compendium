@@ -61,8 +61,6 @@ library(terra)
 library(prosail)
 library(dplyr)
 
-crs_out <- "EPSG:32632"
-
 # Generate look up table (LUT)
 # We are obtaining the parameters for sugar beet according to Jay, Sylvain, 
 # Fabienne Maupas, Ryad Bendoula, and Nathalie Gorretta."Retrieving LAI, 
@@ -217,9 +215,6 @@ retrieve_lai <- function(image_date,
   
   # Full output file name: <output/lai_maps/platform/date.tif>
   output_filename <- file.path(output_foldername, paste0(image_date, ".tif"))
-  
-  # Ensure correct CRS on the raster object
-  terra::crs(lai_inversion) <- crs_out
   
   # Write the LAI raster to disk
   terra::writeRaster(lai_inversion, filename = output_filename, overwrite = TRUE)
