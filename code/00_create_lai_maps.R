@@ -1,49 +1,26 @@
-###############################################################################
-# Project:     cercospoRa
-# Script:      00_create_lai_maps.R
-# Author:      Nathan Okole
-# Affiliation: Institute for Sugar Beet Research
-# Date:        2025-11-22
-#
-# Description:
-#   This script generates LAI maps using the PROSAIL radiative transfer model. 
-#
-# Reproducibility:
-#   Session information and dependencies are captured at the end of the script
-#   using library(usethis) and sessioninfo::session_info()
-#
-# Usage:
-#   Run the entire script or step-by-step using RStudio sections.
-#
-# Notes:
-#   - Data available: https://github.com/ReneHeim/cercospoRa_compendium/tree/main/data 
-#
-###############################################################################
+# ---- Dependency management --------------------------------------------------
+cran_packages <- c("terra", "here", "sessioninfo", "usethis", "dplyr", "sf")
+github_packages <- c("prosail")  # from jbferet/prosail
 
+# 1) Install missing CRAN packages
+missing_cran <- setdiff(cran_packages, rownames(installed.packages()))
+if (length(missing_cran) > 0) {
+  message("Installing missing CRAN packages: ",
+          paste(missing_cran, collapse = ", "))
+  install.packages(missing_cran)
+}
 
-# # ---- Dependency management --------------------------------------------------
-# cran_packages <- c("terra", "here", "sessioninfo", "usethis", "dplyr", "sf")
-# github_packages <- c("prosail")  # from jbferet/prosail
-# 
-# # 1) Install missing CRAN packages
-# missing_cran <- setdiff(cran_packages, rownames(installed.packages()))
-# if (length(missing_cran) > 0) {
-#   message("Installing missing CRAN packages: ",
-#           paste(missing_cran, collapse = ", "))
-#   install.packages(missing_cran)
-# }
-# 
-# # 2) Install missing GitHub packages
-# if (!requireNamespace("prosail", quietly = TRUE)) {
-#   if (!requireNamespace("remotes", quietly = TRUE)) {
-#     install.packages("remotes")
-#   }
-#   remotes::install_github("jbferet/prosail")
-# }
-# 
-# # 3) Load all required packages (CRAN + GitHub)
-# required_packages <- c(cran_packages, github_packages)
-# invisible(lapply(required_packages, library, character.only = TRUE))
+# 2) Install missing GitHub packages
+if (!requireNamespace("prosail", quietly = TRUE)) {
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    install.packages("remotes")
+  }
+  remotes::install_github("jbferet/prosail")
+}
+
+# 3) Load all required packages (CRAN + GitHub)
+required_packages <- c(cran_packages, github_packages)
+invisible(lapply(required_packages, library, character.only = TRUE))
 
 # ---- Custom function --------------------------------------------------------
 tail <- function(x) {
