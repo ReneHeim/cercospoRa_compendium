@@ -7,7 +7,7 @@
 #
 # Description:
 #   This script uses the LAI maps obtained from the radiative transfer model
-#   (PROSAIL) and creates epidemic onset maps. 
+#   (PROSAIL) and creates epidemic onset maps.
 #
 # Reproducibility:
 #   Session information and dependencies are captured at the end of the script
@@ -64,15 +64,13 @@ generate_EO_maps <- function(platform,
 
   # Directory containing LAI maps for this platform
   img_dir <- here("output", "LAI_maps", platform)
+  img_Dates <- as.POSIXct(unlist(lapply(strsplit(list.files(img_dir),split = "_"),"[[",1)),
+                       format = "%Y%m%d",tz = "UTC")
 
   # Read all available LAI maps and fit pixel-wise growth parameters
   epidemic_onset_param <- read_sb_growth_parameter(
     img_files = list.files(img_dir, pattern = "tif$", full.names = TRUE),
-    img_dates = as.POSIXct(
-      as.Date(
-        list.files(img_dir, pattern = "tif$", full.names = FALSE),
-        format = "%Y_%m_%d"
-      ), tz = "UTC"),
+    img_dates = img_Dates,
     target_res = target_res
   )
 
@@ -140,7 +138,7 @@ for (platform in platforms) {
 library(usethis)
 suppressWarnings(
   sessioninfo::session_info(
-    to_file = here("output", "Predicted_epidemic_onset", 
+    to_file = here("output", "Predicted_epidemic_onset",
                    "01_lai_to_epidemic_onset_session.log")
     )
 )
