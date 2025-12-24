@@ -48,24 +48,14 @@ cd cercospoRa_compendium
 
 2. **Obtain data**
 
-<<<<<<< HEAD
 Download the required raw data from HERE and copy them into `data/` (see the `data/` subfolder or the manuscript Data availability statement for links and access details).  
-=======
-Download the required raw data into `data/` (see the `data/` subfolder or the 
-manuscript Data availability statement for links and access details).  
->>>>>>> origin/Paul_revisions
 
 3. **Project root and paths**  
 
-<<<<<<< HEAD
 All scripts assume the project root is the working directory, best achieved by creating an R project in the `cercospoRa_compendium/` directory, and use the `here` package (in R) to resolve paths for portability and reproducibility. 
 
 <img src="https://github.com/user-attachments/assets/1c0e4b0e-0d93-4ce2-9fb0-b2a67a601a05"
      alt="rproject" style="width: 50%; height: auto;">
-=======
-All scripts assume the project root is the working directory and use the `here` 
-package (in R) to resolve paths for portability and reproducibility.  
->>>>>>> origin/Paul_revisions
 
 4. **Run the workflow**  
 
