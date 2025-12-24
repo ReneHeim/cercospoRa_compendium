@@ -14,7 +14,8 @@ library(officer)
 library(data.table)
 library(ggplot2)
 library(mgcv) # gam models
-source("../code/interpret_gam.R")
+library(here)
+source(here("R/interpret_gam.R"))
 ```
 
 ```{r get_das}
@@ -33,8 +34,8 @@ calc_das(days = 156)
 
 ### Read in data
 ```{r read_data}
-cclo <- fread("../output/2025-12-08_fulldf_cc_cercospoRa.csv")[, "data" := "canopy_closure"]
-eeeo <- fread("../output/2025-12-08_fulldf_eo_cercospoRa_sus5.csv")[, "data" := "epidemic_onset"]
+cclo <- fread(here("output/2025-12-08_fulldf_cc_cercospoRa.csv"))[, "data" := "canopy_closure"]
+eeeo <- fread(here("output/2025-12-08_fulldf_eo_cercospoRa_sus5.csv"))[, "data" := "epidemic_onset"]
 ```
 
 We will combine the data so we can associate observation locations with canopy 
