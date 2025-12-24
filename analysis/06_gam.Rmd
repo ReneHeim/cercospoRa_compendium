@@ -1,0 +1,728 @@
+---
+title: "analysis"
+author: "Paul Melloy"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(RANN) # nearest neighbour
+library(flextable)
+library(officer)
+library(data.table)
+library(ggplot2)
+library(mgcv) # gam models
+library(here)
+source(here("R/interpret_gam.R"))
+```
+
+```{r get_das}
+calc_das <- function(d,days, Sd = "2022-03-31"){
+  if(missing(days)){
+    as.POSIXct(d, format = "%Y-%m-%d") - as.POSIXct(Sd, format = "%Y-%m-%d")
+  }else{
+      if(missing(d)){
+        as.POSIXct(Sd, format = "%Y-%m-%d") + (days * 60 * 60 * 24)
+      }
+    }
+}
+calc_das("2022-05-15")
+calc_das(days = 156)
+```
+
+### Read in data
+```{r read_data}
+cclo <- fread(here("output/2025-12-08_fulldf_cc_cercospoRa.csv"))[, "data" := "canopy_closure"]
+eeeo <- fread(here("output/2025-12-08_fulldf_eo_cercospoRa_sus5.csv"))[, "data" := "epidemic_onset"]
+```
+
+We will combine the data so we can associate observation locations with canopy 
+closure locations.  
+
+### Inspect data
+#### Check headings
+```{r inspect_data_headings}
+colnames(cclo)
+colnames(eeeo)
+```
+
+We need to change the headings so they have the same names and join them.
+
+#### Rename variables  
+```{r rename_cols}
+setnames(cclo,
+         old = c("cc","area","treatment"),
+         new = c("das","inoculum","fungicide"))
+
+setnames(eeeo,
+         old = c("area","treatment"),
+         new = c("inoculum","fungicide"))
+
+# Remove date column
+eeeo[, date := NULL]
+```
+
+Join together the two datasets.  
+
+```{r join}
+dat <- rbind(cclo,eeeo)
+```
+
+#### Recheck variables    
+
+```{r rename_vars}
+unique(dat$fungicide)
+
+unique(dat$inoculum)
+# dat[inoculum == "roi", inoculum := "non-inoculated"]
+# dat[inoculum == "ino", inoculum := "inoculated"]
+
+unique(dat$source)
+#dat[source == "uav", source := "uas"]
+
+
+# Relevel fungicide factor
+dat[,fungicide := factor(fungicide, levels = c("untreated", "treated"))]
+dat[,inoculum := factor(inoculum, levels = c("non-inoculated", "inoculated"))]
+```
+
+<br>  
+
+### Get nearest neighbour
+Associate the closest observed epidemic onset date (EO) to the UAS or S2 
+Earliest Estimated Epidemic Onset (EEEO) date.  
+
+```{r nearest_neighbour}
+obs_nearest <- nn2(data = dat[source == "observation",.(x,y)],
+                   query = dat[,.(x,y)],
+                   k = 2)
+
+range(obs_nearest$nn.idx[,1])
+
+# associate RS estimated EO with closest observation
+dat[, obs_das:= dat[source == "observation",das][obs_nearest$nn.idx[,1]]]
+```
+
+<br>  
+<br>  
+***  
+
+## Canopy Closure  
+
+```{r subset_cclo}
+cclo <- dat[data == "canopy_closure"]
+```
+
+
+Do a quick check on aov of the data to inspect average differences between 
+inoculation and fungicide treatments.
+
+```{r lm_check}
+# check variance averages 
+mod <- lm(das ~ source + inoculum + fungicide, data = cclo)
+summary(mod)
+```
+
+### Plot data
+```{r plot_data}
+# plot EO data from each source an treatment
+cclo |>
+  ggplot(aes(source,das, fill = inoculum)) +
+  geom_boxplot() +
+  facet_wrap(~fungicide) +
+  theme_bw() +
+  labs(x = "Remote sensing platform",
+       y = "Canopy Closure in days after sowing") +
+  theme(legend.position = "top")+
+  scale_fill_viridis_d(begin = 0.5)
+```
+
+### Model data  
+
+#### Model 1  
+
+> What are the average influences independent of other treatments accounting for
+spatial variability?  
+
+We will use Generalized Additive Models (GAM) to model the data, adding a spline
+to account for the spatial variance across the field.  
+
+```{r model_data1}
+# what are the average influences independant of other treatments
+mod1 <- gam(das ~ s(x,y) + source + inoculum + fungicide,
+          data = cclo,
+          method = "REML")
+summary(mod1)
+```
+
+Check the spline fit to ensure no over fitting.  
+```{r spline_fit1}
+plot(mod1)
+```
+
+There seems an overfitting due to the experimental setup.
+The spatial spline is accounting for too much of the inoculated areas.  
+
+We will try again refitting with less knots.  
+
+```{r model_data1a}
+# what are the average influences independant of other treatments
+mod1a <- gam(das ~ s(x,y, k=11) + source + inoculum + fungicide,
+          data = cclo,
+          method = "REML")
+```
+
+Check the spline fit to ensure no over fitting.  
+
+```{r spline_fit1a}
+plot(mod1a)
+```
+
+With fewer knots we have obtained a spatial correction for the field gradient.
+
+Fungicide treated areas on average were not significantly different to untreated
+for epidemic onset days.  
+
+Non-Inoculated areas on average show earlier canopy closure, compared to 
+inoculated areas.  
+
+Remote sensing platform UAS detects average canopy closure 12 days earlier.  
+
+<br>  
+
+#### Model 2  
+
+> Is there a significant interaction between measurement *source* and *inoculum*?  
+
+```{r model_data2}
+mod2 <- gam(das ~ s(x,y, k = 11) + source * inoculum + fungicide,
+            data = cclo,
+            method = "REML")
+summary(mod2)
+```
+
+There is no significant interaction in inoculated areas and canopy closure dates
+from different platforms.  
+
+<br>  
+
+#### Model 3  
+
+> *Inoculum* and *fungicide* interaction?  
+
+```{r model_data3}
+mod3 <- gam(das ~ s(x,y, k = 11) + source + inoculum * fungicide,
+            data = cclo)
+summary(mod3)
+```
+
+There is a 
+`r interpret_gam(mod3,coef = "inoculuminoculated:fungicidetreated" ,sig = TRUE)` interaction, 
+between fungicide and inoculum 
+(P = `r interpret_gam(mod3, 0,coef = "inoculuminoculated:fungicidetreated" ,sig = TRUE)`.  
+Inoculated areas in fungicide treated plots show 
+`r interpret_gam(mod3,5,coef = "inoculuminoculated:fungicidetreated",)` canopy closure date.
+
+<br>  
+
+#### Model 4  
+
+> Is there a interaction between RS *source* and *fungicide*?  
+
+```{r model_data4}
+mod4 <- gam(das ~ s(x,y, k = 11) + source * fungicide + inoculum,
+            data = cclo,
+            method = "REML")
+summary(mod4)
+anova(mod4)
+```
+
+
+### Fungicide treatment  
+
+Overall there was no significant effects of fungicide treated part of the field.
+The only significant result showed remote sensing methods S2 and UAS resulted in
+earlier EEEO dates in fungicide treated compared to untreated.  
+The fungicide treated area seemed to show thicker canopy and I think this result
+can be put down to spatial field effects.  
+
+<br>  
+
+#### Model 5  
+Therefore the fungicide variable will be removed and this area treated as a 
+field replicate.  
+
+> Is there an interaction between RS platform and inoculated areas on canopy 
+closure?  
+
+```{r model_data5}
+mod5 <- gam(das ~ s(x,y, k = 7) + source * inoculum,
+            data = cclo[fungicide == "untreated"],
+            method = "REML")
+summary(mod5)
+```
+
+There is no canopy closure timing interaction between remote sensing platform 
+and inoculated areas.  
+
+##### results table  
+
+
+
+```{r}
+cclosure_estimates <- 
+  data.table(Variable = c("Intercept","Super S2","UAS","Inoculated Area","Super S2 : Inoculated","UAS : Inoculated"),
+             round(summary(mod5)$p.table,3))[,c(1,2,3,5)] |>
+   flextable() |>
+   align(align = "center", part = "all") |>
+   fontsize(size = 8, part = "body") |>
+   fontsize(size = 10, part = "header") |>
+   italic(italic = TRUE, part = "header") |>
+   set_caption(
+      "Table ##: Estimated canopy closure in days after sowing (DAS) and the mean
+      difference to the non-inoculated sentinal-2 data (intercept). 
+      P values indicate statistical significance in comparison to the intercept."
+   ) |>
+   autofit()
+
+cclosure_estimates
+```
+
+
+<br>  
+
+#### Model 6  
+
+```{r model_data6}
+mod6 <- gam(das ~ s(x,y, k = 7) + source + inoculum,
+            data = cclo[fungicide == "untreated"],
+            method = "REML")
+summary(mod6)
+```
+
+
+##### **Intercept**  
+The intercept here represents: 
+canopy closure dates in inoculated areas determined by sentinel-2 
+and averages around `r interpret_gam(mod6, words = 0)` days
+`r interpret_gam(mod6, words = 4)` sowing.  
+  
+##### **Remote sensing variables**  
+UAS estimated epidemic onset an average of 
+`r interpret_gam(mod6, words = 0, coeff = "sourceuas")` days 
+`r interpret_gam(mod6, words = 5, coeff = "sourceuas")` than Sentinel 2.  
+
+##### **Inoculation effect**
+
+Non-inoculated areas were on average 
+`r interpret_gam(mod6, words = 0, coeff = "inoculuminoculated")` days 
+`r interpret_gam(mod6, words = 5, coeff = "inoculuminoculated")` 
+than non-inoculated areas.  
+
+As shown in `mod5` there is no interactive effect of source, indicating both 
+remote sensing platforms showed inoculated areas had retarded phenology.
+
+##### **Spatial effect**  
+```{r}
+plot(mod6)
+```
+
+
+
+Model comparisons
+
+```{r}
+anova(mod5,mod6)
+```
+
+No significant difference, use simpler model mod6.  
+
+
+##### results table  
+
+
+
+```{r}
+icept <- round(unname(mod6$coefficients["(Intercept)"]),3)
+tbl_dat <-  
+  data.table(Variable = c("Intercept","Super S2","UAS","Inoculated Area"),
+             round(summary(mod6)$p.table,3))[,c(1,2,3,5)][
+               Estimate != icept, Estimate := Estimate + mod6$coefficients["(Intercept)"]]
+cclosure_estimates6 <- 
+  tbl_dat |>
+  flextable() |>
+   align(align = "center", part = "all") |>
+   fontsize(size = 8, part = "body") |>
+   fontsize(size = 10, part = "header") |>
+   italic(italic = TRUE, part = "header") |>
+   set_caption(
+      "Table ##: Estimated canopy closure in days after sowing (DAS) and the mean
+      difference to the non-inoculated sentinal-2 data (intercept). 
+      P values indicate statistical significance in comparison to the intercept."
+   ) |>
+   autofit()
+
+cclosure_estimates6
+save_as_docx(cclosure_estimates6, path = "../output/cclosure_estimates.docx")
+```
+
+
+<br>  
+
+<br>  
+<br>  
+
+***  
+
+## Epidemic Onset  
+
+
+```{r subset_eeeo}
+eeeo <- dat[data == "epidemic_onset"]
+```
+<br>  
+
+### Plot data
+```{r plot_eo_data, fig.height= 8}
+# plot EO data from each source an treatment
+library(ggplot2)
+eeeo[source != "observation",] |>
+  ggplot(aes(x = obs_das, y = das, color = inoculum)) +
+   geom_point(size = 4,alpha = .5,shape = 16) +
+  facet_wrap(~fungicide + source) +
+  theme_bw() +
+  labs(title = "Epidemic onset by spatial location",
+       x = "Observation",
+       y = "UAS Estimated earliest EO") +
+  theme(legend.position = "top")+
+  xlim(c(90,180))+
+  ylim(c(90,180))+
+  geom_abline(slope = 1, intercept = 0, color = "black", linetype = "dashed")+
+  scale_color_viridis_d(begin = 0.4)
+```
+
+<br>  
+<br>  
+
+### Model data  
+
+#### Model 1  
+
+> What are the average influences independent of other treatments?  
+
+We will use Generalized Additive Models (GAM) to model the data, adding a spline
+to account for the spatial location of the data.  
+
+```{r eo_model_data1}
+# what are the average influences independant of other treatments
+mod1_eo <- gam(das ~ s(x,y) + source + inoculum + fungicide,
+          data = eeeo,
+          method = "REML")
+summary(mod1_eo)
+```
+
+Fungicide treated areas on average were not significantly different to untreated
+for epidemic onset days.  
+
+#### check spatial fit  
+
+```{r eo_spatial_fit}
+plot(mod1_eo)
+```
+
+This looks slightly over fit. 
+We should use fewer knots.  
+
+<br>  
+
+#### Model 2  
+
+
+```{r eo_mod2}
+mod2_eo <- gam(das ~ s(x,y, k = 5) + source + inoculum + fungicide,
+          data = eeeo,
+          method = "REML")
+plot(mod2_eo)
+```
+
+<br>  
+
+#### Model 3  
+
+> Is there a significant interaction between measurement source and inoculum?  
+
+```{r eo_model_data3}
+mod3_eo <- gam(das ~ s(x,y, k = 5) + source * inoculum + fungicide,
+            data = eeeo,
+            method = "REML")
+summary(mod3_eo)
+```
+
+There is a 
+`r interpret_gam(mod3_eo,1 ,"sources2:inoculuminoculated",sig = TRUE)` interaction 
+between inoculated areas observed epidemic onset and remote sensing platform 
+dates.  
+
+<br>  
+
+#### Model 4  
+
+
+> Three-way interaction?  
+
+```{r eo_model_data4}
+mod4_eo <- gam(das ~ s(x,y, k = 5) + source * inoculum * fungicide,
+            data = eeeo)
+summary(mod4_eo)
+```
+
+As fungicide treated areas lead to 
+`r interpret_gam(mod4_eo, 5 ,"fungicidetreated")` epidemic onset, 
+however this was not observed with remote sensing platforms.
+
+In the fungicide treated areas S2 showed 
+`r interpret_gam(mod4_eo, 5 ,"sources2:fungicidetreated")` estimated epidemic onset, 
+super S2 showed 
+`r interpret_gam(mod4_eo, 5 ,"sources2s:fungicidetreated")` estimated epidemic onset, 
+and USAS showed
+`r interpret_gam(mod4_eo, 5 ,"sourceuas:fungicidetreated")` estimated epidemic onset, 
+This was likely due to non-treated areas returning later canopy closure.  
+
+Inoculated areas in fungicide treated plots showed for S2
+`r interpret_gam(mod4_eo, 5 ,"sources2:inoculuminoculated:fungicidetreated")` estimated epidemic onset, 
+super S2 showed 
+`r interpret_gam(mod4_eo, 5 ,"sources2s:inoculuminoculated:fungicidetreated")` estimated epidemic onset, 
+and USAS showed
+`r interpret_gam(mod4_eo, 5 ,"sourceuas:inoculuminoculated:fungicidetreated")` estimated epidemic onset, 
+compared to non-inoculated areas.
+
+
+
+### Drop Fungicide Treatment  
+
+The fungicide variable will be removed, initially I will test the model 
+using fungicide as field replicate, then drop fungicide treated areas from the 
+analysis.  
+
+<br>  
+
+#### Model 5  
+
+```{r eo_model_data5}
+mod5_eo <- gam(das ~ s(x,y, k =5) + source * inoculum,
+            data = eeeo[fungicide != "treated"])
+summary(mod5_eo)
+```
+
+##### **Intercept**  
+The intercept here represents:  
+
+> Observed EO dates in non-inoculated areas  
+
+and averages around `r interpret_gam(mod5_eo, 0)` days 
+`r interpret_gam(mod5_eo, 4)` sowing.  
+  
+##### **Remote sensing variables**  
+Sentinel 2 estimated epidemic onset an average of 
+`r interpret_gam(mod5_eo, 0,"sources2")` days 
+`r interpret_gam(mod5_eo, 5,"sources2")` than observed EO.  
+
+Super Resolution Sentinel 2 estimated earliest epidemic onset an average of 
+`r interpret_gam(mod5_eo, 0,"sources2s")` days 
+`r interpret_gam(mod5_eo, 5,"sources2s")` than observed EO.  
+
+UAS estimated earliest estimated epidemic onset an average of 
+`r interpret_gam(mod5_eo, 0,"sourceuas")` days 
+`r interpret_gam(mod5_eo, 5,"sourceuas")` than observed EO.  
+
+##### **Inoculation effect**  
+
+Observed EO dates within inoculated areas were on average 
+`r interpret_gam(mod5_eo, 0,"inoculuminoculated")` days 
+`r interpret_gam(mod5_eo, 5,"inoculuminoculated")` 
+days earlier than non-inoculated areas.  
+
+However EEEO dates in inoculated areas produced by remote sensing methods 
+S2 , super S2 and UAS were
+`r interpret_gam(mod5_eo, 0,"sources2:inoculuminoculated")`,
+`r interpret_gam(mod5_eo, 0,"sources2s:inoculuminoculated")` and 
+`r interpret_gam(mod5_eo, 0,"sourceuas:inoculuminoculated")` days 
+`r interpret_gam(mod5_eo, 5,"sourceuas:inoculuminoculated")` than the observed EO days.  
+
+##### **Spatial Effect**  
+
+```{r mod5_spatial}
+plot(mod5_eo)
+```
+
+The spatial effect shows northern parts of the field showed earlier observed 
+epidemic onset compared to Southern areas.
+
+
+##### Results Table  
+
+```{r}
+var_names <- names(mod5_eo$coefficients)
+
+icept <- round(unname(mod5_eo$coefficients["(Intercept)"]),3)
+
+adj_coefs <- unname(
+  c(mod5_eo$coefficients["(Intercept)"],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[2]],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[3]],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[4]],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[5]],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[2]] + 
+      mod5_eo$coefficients[var_names[5]] + mod5_eo$coefficients[var_names[6]],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[3]] + 
+      mod5_eo$coefficients[var_names[5]] + mod5_eo$coefficients[var_names[7]],
+    mod5_eo$coefficients["(Intercept)"] + mod5_eo$coefficients[var_names[4]] + 
+      mod5_eo$coefficients[var_names[5]] + mod5_eo$coefficients[var_names[7]]
+  ))
+
+
+tbl_dat <-  
+  data.table(Variable = c("Intercept","Super S2","UAS","Inoculated Area"),
+             round(summary(mod6)$p.table,3))[,c(1,2,3,5)][
+               Estimate != icept, Estimate := Estimate + mod6$coefficients["(Intercept)"]]
+
+eeeo_estimates <- 
+  data.table(Variable = c("Intercept","Sentinal-2","Super Sentinal-2","UAS",
+                          "Observed : Inoculated Area","S2 : Inoculated","Super S2 : Inoculated",
+                          "UAS : Inoculated"),
+             Estimate = round(adj_coefs,3),
+             round(summary(mod5_eo)$p.table[,c(2,4)],3)) |>
+   flextable() |>
+   align(align = "center", part = "all") |>
+   fontsize(size = 8, part = "body") |>
+   fontsize(size = 10, part = "header") |>
+   italic(italic = TRUE, part = "header") |>
+   set_caption(
+      "Table ##: Estimated epidemic onset in days after sowing (DAS) and the mean
+      difference to the non-inoculated observed epidemic onset days (intercept). 
+      P values indicate statistical significance in comparison to the intercept."
+   ) |>
+   autofit()
+
+eeeo_estimates
+save_as_docx(eeeo_estimates, path = "../output/earliest_onsets_estimates.docx")
+```
+
+
+
+<br>  
+
+#### Model 6  
+
+> Does the interaction still hold up when fungicide is excluded?  
+
+```{r eo_model_data6}
+mod6_eo <- gam(das ~ s(x,y, k = 5) + source + inoculum,
+            data = eeeo[fungicide != "treated"])
+summary(mod6_eo)
+```
+
+
+##### **Intercept**  
+The intercept here represents: *Observed EO dates in non-inoculated areas*
+and averages around `r interpret_gam(mod6_eo, 0)` days 
+`r interpret_gam(mod6_eo, 4)` sowing.  
+  
+##### **Remote sensing variables**  
+Sentinel 2 estimated epidemic onset an average of 
+`r interpret_gam(mod6_eo, 0,"sources2")` days 
+`r interpret_gam(mod6_eo, 5,"sources2")` than observed EO.  
+
+Super Resolution Sentinel 2 estimated epidemic onset an average of 
+`r interpret_gam(mod6_eo, 0,"sources2s")` days 
+`r interpret_gam(mod6_eo, 5,"sources2s")` than observed EO.  
+
+UAS estimated epidemic onset an average of 
+`r interpret_gam(mod6_eo, 0,"sourceuas")` days 
+`r interpret_gam(mod6_eo, 5,"sourceuas")` than observed EO.  
+
+##### **Inoculation effect**
+
+Observed EO dates within inoculated areas were on average 
+`r interpret_gam(mod6_eo, 0,"inoculuminoculated")` days 
+`r interpret_gam(mod6_eo, 5,"inoculuminoculated")` days 
+than non-inoculated areas.  
+
+##### **Spatial Effect**  
+```{r}
+plot(mod6_eo)
+```
+
+The spatial effect shows northern parts of the field showed earlier observed 
+epidemic onset compared to Southern areas.
+
+
+<br>  
+<br>  
+
+### Model comparisons
+
+```{r model_comparisons}
+anova(mod5_eo,mod6_eo)
+AIC(mod5_eo,mod6_eo)
+```
+
+There is a significant difference between these models and model 5, with the
+interaction shows a lower AIC.  
+
+<br>  
+<br>  
+
+***  
+## Proportional successes  
+
+> What is the proportion of observed EO occuring later than EEEO?  
+
+This should show us how successful the negative prognosis model is
+
+```{r prop_success_dens}
+tbl_prop_success <- 
+    eeeo[source != "observation" & fungicide != "treated", 
+      list("prop_success" = round(sum(das < obs_das)/NROW(das),3),
+           n = .N), 
+      by = .(source, inoculum, fungicide)][,.(source,
+                                              inoculum,
+                                              n,
+                                              prop_success)] |>
+  flextable() |>
+  align_text_col(align = "center") |>
+  set_header_labels(source = "RS method",
+                    inoculum = "Inoculum",
+                    prop_success = "proportional success") |>
+   fontsize(size = 8, part = "body") |>
+   fontsize(size = 10, part = "header") |>
+   set_caption("Table ##: Proportion success of RS estimated onset dates occuring prior to spatially proximal observed epidemic onset")
+
+tbl_prop_success
+save_as_docx(tbl_prop_success, path = "../output/prop_success.docx")
+```
+
+
+Lets visualise the densities of the observed and estimated epidemic onset dates
+
+```{r prop_success}
+eeeo[, obs_dif := das - obs_das]
+
+eeeo[source != "observation"] |>
+  ggplot(aes(x = obs_dif, fill = inoculum)) +
+  geom_density(alpha = .5) +
+  facet_wrap(~source + fungicide) +
+  theme_bw() +
+  labs(x = "Difference between observed EO and Earliest estimated EO",
+       y = "Density") +
+  theme(legend.position = "top")+
+  scale_fill_viridis_d()+
+  geom_vline(xintercept = 0, linetype = "dashed", color = "black", linewidth = 1)
+
+```
+
+
+
+

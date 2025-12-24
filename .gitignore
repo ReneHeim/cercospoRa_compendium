@@ -2,8 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
-data/s2
-data/s2s
-data/uas
+data/s2*
+data/s2s*
+data/uas*
+data/UAV*
+data/*gpkg
 *.Rproj
 data/ROI/Field_perimeter.gpkg
+output*

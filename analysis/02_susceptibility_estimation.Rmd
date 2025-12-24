@@ -1,0 +1,148 @@
+---
+title: "07_susceptibility_estimation"
+author: "Paul Melloy"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+This file explains the equation for converting the bbch susceptibility rating
+scale to a cDIV threshold which is used to determine the earliest estimated
+epidemic onset time in the `cercospoRa` negative prognosis model
+
+## Data  
+
+This data is transcribed from Table 1 of [Wolf and Verreet (2005)](https://apsjournals.apsnet.org/doi/abs/10.1094/PHYTO-95-0269)
+
+```{r data}
+Table1 <- data.frame(cultivar = c(rep("Ribella", 13),
+                                 rep("Patricia",11),
+                                 rep("Corinna", 16),
+                                 rep("Tatjana", 3),
+                                 rep("Cyntia", 2),
+                                 rep("Achat", 2),
+                                 rep("Elan", 3),
+                                 rep("Steffi", 4),
+                                 rep("Meta", 6),
+                                 rep("Evita", 3),
+                                 rep("Hilma", 3),
+                                 rep("Orbis",3)),
+                    bbch = c(rep(4, 13),
+                             rep(4, 11),
+                             rep(4, 16),
+                             rep(4, 3),
+                             rep(4, 2),
+                             rep(4, 2),
+                             rep(5, 3),
+                             rep(5, 4),
+                             rep(6, 6),
+                             rep(5, 3),
+                             rep(5, 3),
+                             rep(5, 3)),
+                    resistance = c(rep("High", 13),
+                                   rep("High", 11),
+                                   rep("High", 16),
+                                   rep("High", 3),
+                                   rep("High", 2),
+                                   rep("High", 2),
+                                   rep("Low", 3),
+                                   rep("Low", 4),
+                                   rep("Low", 6),
+                                   rep("Low", 3),
+                                   rep("Low", 3),
+                                   rep("Low", 3))
+  )
+```
+
+Have a quick look at the data.
+
+```{r}
+plot(as.factor(Table1$resistance), Table1$bbch, 
+     xlab = "Susceptibility Category", ylab = "BBCH susceptibility scale")
+```
+
+## Model susceptibility data  
+
+We need to create an equation to estimate what cumulative DIV thresholds are for 
+each level on the 
+[BBCH scale](https://www.bundessortenamt.de/bsa/media/Files/BSL/bsl_getreide_2024.pdf).  
+
+Using the data published in 
+[Wolf and Verreet (2005), Phytopathology](https://apsjournals.apsnet.org/doi/abs/10.1094/PHYTO-95-0269) 
+we will model the relationship between classed into "High" and "Low" 
+Susceptibility, as raw data on each of the cultivars were not published.  
+
+We will use a basic linear model, which at it's heart is an ANOVA to find the 
+coefficient, which is the change in cDIV for each BBCH level.
+
+```{r}
+sus_mod <- stats::lm(bbch ~ as.factor(resistance), data = Table1)
+summary(sus_mod)
+```
+
+Next lets consider the values presented in Table 2 from Wolf and Vereet paper.
+We will focus on Moisture index 1 as this index is used in the `cercospoRa` 
+package, and the paper states there was no significant difference between the 
+moisture index methods.  
+
+First we set the minimum cDIV values when epidemic onset was observed in each 
+respective cultivar susceptibility categories. 
+We will use this to estimate what the earliest estimate epidemic onset date when
+canopy closure date is used as the start date of the model.  
+
+```{r cDIV_min_thresholds}
+min_resistant <- 9.69
+min_susceptible <- 5.88
+```
+
+Get the difference between minimum cDIV values of resistant and susceptible 
+cultivars
+
+```{r cDIV_diff}
+min_diff <- min_resistant - min_susceptible
+min_diff
+```
+  
+Find average change in cDIV per BBCH scale value of susceptibility.  
+
+We will divide the difference in the minimum cDIV values for 'low' and 'highly' 
+susceptible varieties, by the model coefficient, which shows the estimated difference
+in BBCH values between varieties classified as 'low' and 'highly' susceptible.  
+
+```{r cDIV_coef}
+cDIV_coef <- min_diff/coef(sus_mod)[2]
+# remove the names
+names(sus_coef) <- NULL
+cDIV_coef
+```
+
+Now we have the cDIV coeficient we need to define an intercept.
+The lm we used before was centered on the BBCH value of 4 we will use this for 
+the intercept and adjust values beyond that
+
+```{r}
+# cDIV minumum for BBCH rated at 4 (stdev 3.91)
+
+cDIV_threshold <- function(BBCH, intercept = 9.69, cdiv_coef = 2.994){
+  if(BBCH >= 4){
+    BBCH <- (BBCH - 4)^(1/2)
+  }else{
+    BBCH <- 0-(abs(BBCH - 4)^(1/2))
+  }
+  
+  #BBCH <- BBCH^(1/3)
+intercept - BBCH * cdiv_coef  
+}
+
+sapply(1:9,cDIV_threshold)
+```
+
+
+```{r}
+bbch <- seq(1,9,by = 0.01)
+plot(bbch, sapply(bbch,cDIV_threshold, intercept = 12), type = "l")
+```
+
+```{r}
+cercospoRa::calc_susce
+```
+
