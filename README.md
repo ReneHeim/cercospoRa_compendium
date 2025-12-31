@@ -10,7 +10,7 @@ This repository is the open research compendium for the article *Spatially expli
 ## Quick links
 
 - 📄 **Manuscript and supplements:** `docs/` (PDF and supporting material once available)  
-- 📊 **Data:** `data/` (raw and example data; large files to be downloaded separately)  
+- 📊 **Data:** [`data/`](https://e.pcloud.link/publink/show?code=kZWuMNZQtHS8HS13OB2Nl1sWwBL55a4jIIX) (raw and example data; large files to be downloaded separately)  
 - 🧮 **Analysis code:** `code/` (R and Python scripts / Rmds, ordered by prefix to indicate run order)  
 - 📦 **R package:** [`cercospoRa`](https://cran.r-project.org/package=cercospoRa) – implementation of the CLS negative prognosis framework  
 
