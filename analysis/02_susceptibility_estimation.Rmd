@@ -38,7 +38,7 @@ Table1 <- data.frame(cultivar = c(rep("Ribella", 13),
                              rep(5, 3),
                              rep(5, 3),
                              rep(5, 3)),
-                    resistance = c(rep("High", 13),
+                    susceptibility = c(rep("High", 13),
                                    rep("High", 11),
                                    rep("High", 16),
                                    rep("High", 3),
@@ -56,7 +56,7 @@ Table1 <- data.frame(cultivar = c(rep("Ribella", 13),
 Have a quick look at the data.
 
 ```{r}
-plot(as.factor(Table1$resistance), Table1$bbch, 
+plot(as.factor(Table1$susceptibility), Table1$bbch, 
      xlab = "Susceptibility Category", ylab = "BBCH susceptibility scale")
 ```
 
@@ -75,14 +75,11 @@ We will use a basic linear model, which at it's heart is an ANOVA to find the
 coefficient, which is the change in cDIV for each BBCH level.
 
 ```{r}
-sus_mod <- stats::lm(bbch ~ as.factor(resistance), data = Table1)
+sus_mod <- stats::lm(bbch ~ as.factor(susceptibility), data = Table1)
 summary(sus_mod)
 ```
 
-Next lets consider the values presented in Table 2 from Wolf and Vereet paper.
-We will focus on Moisture index 1 as this index is used in the `cercospoRa` 
-package, and the paper states there was no significant difference between the 
-moisture index methods.  
+Next lets consider the values described in the text of the Wolf and Vereet paper.
 
 First we set the minimum cDIV values when epidemic onset was observed in each 
 respective cultivar susceptibility categories. 
@@ -90,8 +87,8 @@ We will use this to estimate what the earliest estimate epidemic onset date when
 canopy closure date is used as the start date of the model.  
 
 ```{r cDIV_min_thresholds}
-min_resistant <- 9.69
-min_susceptible <- 5.88
+min_resistant <- 12
+min_susceptible <- 7
 ```
 
 Get the difference between minimum cDIV values of resistant and susceptible 
@@ -105,13 +102,14 @@ min_diff
 Find average change in cDIV per BBCH scale value of susceptibility.  
 
 We will divide the difference in the minimum cDIV values for 'low' and 'highly' 
-susceptible varieties, by the model coefficient, which shows the estimated difference
-in BBCH values between varieties classified as 'low' and 'highly' susceptible.  
+susceptible varieties by the model coefficient. 
+This will provide an estimate of the difference, in DIV values between, 
+varieties classified as 'low' and 'highly' susceptible in the Wolf study.  
 
 ```{r cDIV_coef}
 cDIV_coef <- min_diff/coef(sus_mod)[2]
 # remove the names
-names(sus_coef) <- NULL
+names(cDIV_coef) <- NULL
 cDIV_coef
 ```
 
@@ -122,7 +120,7 @@ the intercept and adjust values beyond that
 ```{r}
 # cDIV minumum for BBCH rated at 4 (stdev 3.91)
 
-cDIV_threshold <- function(BBCH, intercept = 9.69, cdiv_coef = 2.994){
+cDIV_threshold <- function(BBCH, intercept = 7, cdiv_coef = 3.9286){
   if(BBCH >= 4){
     BBCH <- (BBCH - 4)^(1/2)
   }else{
@@ -133,13 +131,13 @@ cDIV_threshold <- function(BBCH, intercept = 9.69, cdiv_coef = 2.994){
 intercept - BBCH * cdiv_coef  
 }
 
-sapply(1:9,cDIV_threshold)
+sapply(1:9,cDIV_threshold,intercept = 13)
 ```
 
 
 ```{r}
 bbch <- seq(1,9,by = 0.01)
-plot(bbch, sapply(bbch,cDIV_threshold, intercept = 12), type = "l")
+plot(bbch, sapply(bbch,cDIV_threshold, intercept = 7), type = "l")
 ```
 
 ```{r}
